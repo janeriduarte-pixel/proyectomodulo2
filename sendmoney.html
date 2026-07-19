@@ -1,1 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alke Wallet - Enviar Fondos</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>body { background-color: #f4f7f6; } .navbar-fintech { background-color: #03045e; }</style>
+</head>
+<body>
 
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-fintech">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="menu.html"><h1 class="mb-4" style="color: #ebebf0;">💰 ALKE WALLET 💰</h1></a>
+            <div class="collapse navbar-collapse d-flex justify-content-end">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="menu.html">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="sendmoney.html">Transferir / Contactos</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card p-4 shadow-sm">
+                    <h3 style="color: #2224a8;" class="mb-3">Enviar Dinero</h3>
+                    <form id="sendForm">
+                        <div class="mb-3">
+                            <label class="form-label">Buscar Contacto Agendado</label>
+                            <input type="text" id="search-contact" class="form-control" placeholder="Escribe el nombre..." required autocomplete="off">
+                            <div id="autocomplete-list" class="list-group mt-1 position-absolute w-50 shadow" style="z-index: 1000;"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Monto a Enviar ($)</label>
+                            <input type="number" id="send-amount" class="form-control" required placeholder="0">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100 fw-bold">Confirmar Transferencia</button>
+                    </form>
+                    <div id="transfer-alert" class="alert alert-success mt-3" style="display: none;">¡Transferencia realizada con éxito!</div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card p-4 shadow-sm">
+                    <h3 style="color: #2224a8;" class="mb-3">Agendar Contacto</h3>
+                    <div class="mb-3">
+                        <input type="text" id="new-contact-name" class="form-control mb-2" placeholder="Nombre completo">
+                        <button id="btn-add-contact" class="btn btn-primary btn-sm w-100 fw-bold">Agregar a la lista</button>
+                    </div>
+                    <h5>Mis Contactos Agendados</h5>
+                    <ul class="list-group" id="contacts-list">
+                        <li class="list-group-item item-contacto">Juan Pérez</li>
+                        <li class="list-group-item item-contacto">María López</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+    let contactos = ["Juan Pérez", "María López"];
+
+    $('#search-contact').on('input', function() {
+        let query = $(this).val().toLowerCase();
+        $('#autocomplete-list').empty();
+        if(query.length > 0) {
+            contactos.forEach(function(contact) {
+                if(contact.toLowerCase().indexOf(query) > -1) {
+                    $('#autocomplete-list').append(`<button type="button" class="list-group-item list-group-item-action select-item">${contact}</button>`);
+                }
+            });
+        }
+    });
+
+    $(document).on('click', '.select-item', function() {
+        $('#search-contact').val($(this).text());
+        $('#autocomplete-list').empty();
+    });
+
+    $('#btn-add-contact').click(function() {
+        let name = $('#new-contact-name').val().trim();
+        if(name !== "") {
+            contactos.push(name);
+            $('#contacts-list').append(`<li class="list-group-item item-contacto">${name}</li>`);
+            $('#new-contact-name').val('');
+        }
+    });
+
+    $('#sendForm').submit(function(e) {
+        e.preventDefault();
+        let contact = $('#search-contact').val();
+        let amount = parseInt($('#send-amount').val());
+        let currentBalance = parseInt(localStorage.getItem('balance') || "150000");
+
+        if(amount > currentBalance || amount <= 0) {
+            alert("Monto inválido o saldo insuficiente.");
+            return;
+        }
+
+        localStorage.setItem('balance', currentBalance - amount);
+
+        let txHistory = JSON.parse(localStorage.getItem('globalTransactions') || "[]");
+        let newTx = {
+            detalle: `Transferencia a ${contact}`,
+            fecha: new Date().toLocaleDateString('es-CL'),
+            monto: amount,
+            tipo: 'withdraw' 
+        };
+        txHistory.push(newTx);
+        localStorage.setItem('globalTransactions', JSON.stringify(txHistory));
+        // --------------------------------------------------------------
+
+        $('#transfer-alert').slideDown().delay(2000).slideUp();
+        $('#send-amount').val('');
+        $('#search-contact').val('');
+    });
+});
+    </script>
+</body>
+</html>
